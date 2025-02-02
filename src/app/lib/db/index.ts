@@ -19,25 +19,27 @@ if (!cached) {
 }
 
 export const connectDB = async () => {
-    if(cached){
+    if (cached) {
         return cached.conn
     }
 
-    if(!cached.promise){
+    if (!cached.promise) {
         const options = {
-             bufferCommand:true,
-             maxPoolSize:10
+            bufferCommand: true,
+            maxPoolSize: 10
         }
+        cached.promise = await mongoose.connect(`${config.mongoDbUri}/${config.mongoDbDatabaseName}`, options).then(() => {
+            mongoose.connection
+        })
     }
 
-    cached.promise  = await mongoose.connect(`${config.mongoDbUri}/${config.mongoDbDatabaseName}`)
+    try {
+        cached.conn = await cached.promise
+    } catch (error) {
+        cached.promise =null
+        throw new Error("check database file ")
+    }
+
+    return cached.conn
+
 }
-
-
-// try {
-//     const connectionInstance = await mongoose.connect(`${config.mongoDbUri}/${config.mongoDbDatabaseName}`)
-//     console.log(`\n MongoDB connected !! DB HOST: ${connectionInstance.connection.host}`);
-// } catch (error) {
-//     console.log("MONGODB connection FAILED ", error);
-//     process.exit(1)
-// }

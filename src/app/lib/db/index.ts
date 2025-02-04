@@ -36,6 +36,7 @@ export const connectDB = async (): Promise<Connection> => {
     try {
         cached.conn = await cached.promise;
     } catch (error) {
+        console.log(error, "error++");
         cached.promise = null;
         throw new Error("Check database connection file");
     }

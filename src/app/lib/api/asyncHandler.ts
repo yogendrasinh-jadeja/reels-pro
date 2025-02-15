@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "../db";
+import connectDB from "../db";
 import { apiErrorResponse } from "./apiResponse";
 
 type HandlerFunction = (req: NextRequest) => Promise<NextResponse>;

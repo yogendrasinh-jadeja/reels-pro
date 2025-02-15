@@ -1,45 +1,39 @@
-import mongoose, { Connection } from "mongoose";
+import mongoose, { Mongoose } from "mongoose";
 import { config } from "../utils/config.js";
 
-if (!config.mongoDbUri) {
-    throw new Error("Please define MongoDB URI in the env file");
+interface MongooseConn {
+    conn: Mongoose | null;
+    promise: Promise<Mongoose> | null;
 }
 
 declare global {
-    var mongooseCache: {
-        conn: Connection | null;
-        promise: Promise<Connection> | null;
+    var mongoose: MongooseConn;
+}
+
+let cached: MongooseConn = global.mongoose;
+
+if (!cached) {
+    cached = global.mongoose = {
+        conn: null,
+        promise: null,
     };
 }
 
-let cached = global.mongooseCache;
+async function dbConnect() {
+    if (cached.conn) return cached.conn;
 
-if (!cached) {
-    cached = global.mongooseCache = { conn: null, promise: null };
-}
-
-export const connectDB = async (): Promise<Connection> => {
-    if (cached.conn) {
-        return cached.conn;
-    }
-
-    if (!cached.promise) {
-        const options = {
+    cached.promise =
+        cached.promise ||
+        mongoose.connect(config.mongoDbUri as string, {
+            dbName: config.mongoDbDatabaseName,
             bufferCommands: true,
-            maxPoolSize: 10,
-        };
-        cached.promise = mongoose.connect(`${config.mongoDbUri}/${config.mongoDbDatabaseName}`, options).then(
-            (connection) => connection.connection
-        );
-    }
+            connectTimeoutMS: 30000,
+        });
 
-    try {
-        cached.conn = await cached.promise;
-    } catch (error) {
-        console.log(error, "error++");
-        cached.promise = null;
-        throw new Error("Check database connection file");
-    }
+    cached.conn = await cached.promise;
+    console.log("database connected");
 
     return cached.conn;
-};
+}
+
+export default dbConnect;
